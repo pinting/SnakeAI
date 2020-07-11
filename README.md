@@ -1,6 +1,6 @@
 # SnakeAI
 
-The original project was developed by [greerviau](https://github.com/greerviau/SnakeAI) and ported to TypeScript by [Denes Tornyi](https://github.com/pinting).
+The original project was developed by [greerviau](https://github.com/greerviau) and ported to TypeScript by [Denes Tornyi](https://github.com/pinting).
 
 [Check out the demo!](https://pinting.github.io/SnakeAI)
 
