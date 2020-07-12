@@ -7,15 +7,15 @@ import { Snake } from "./Snake";
 
 export class Population
 {
-    private snakes: Snake[];
-    public bestSnake: Snake;
+    snakes: Snake[];
+    bestSnake: Snake;
 
-    private bestSnakeScore: number = 0;
-    public gen: number = 0;
-    private samebest: number = 0;
+    bestSnakeScore: number = 0;
+    gen: number = 0;
+    samebest: number = 0;
 
-    public bestFitness: number = 0;
-    private fitnessSum: number = 0;
+    bestFitness: number = 0;
+    fitnessSum: number = 0;
 
     constructor(size: number)
     {
@@ -28,8 +28,11 @@ export class Population
         this.bestSnake.replay = true;
     }
 
+    /**
+     * Check if all the snakes in the population are dead.
+     */
     done(): boolean
-    {  //check if all the snakes in the population are dead
+    {
         for (let i = 0; i < this.snakes.length; i++)
         {
             if (!this.snakes[i].dead)
@@ -42,10 +45,14 @@ export class Population
         return true;
     }
 
+    /**
+     * Update all the snakes in the generation.
+     */
     update(): void
-    {  //update all the snakes in the generation
+    {
+        // If the best snake is not dead update it, this snake is a replay of the best from the past generation
         if (!this.bestSnake.dead)
-        {  //if the best snake is not dead update it, this snake is a replay of the best from the past generation
+        {
             this.bestSnake.look();
             this.bestSnake.think();
             this.bestSnake.move();
@@ -61,26 +68,34 @@ export class Population
         }
     }
 
-    show(): void
-    {  //show either the best snake or all the snakes
+    /**
+     * Show either the best snake or all the snakes.
+     */
+    show(x: number = 0, y: number = 0): void
+    {
+        // Show the brain of the best snake
         if (replayBest)
         {
-            this.bestSnake.show();
-            this.bestSnake.brain.show(0, 0, 360, 790, this.bestSnake.vision, this.bestSnake.decision);  //show the brain of the best snake
+            this.bestSnake.show(x + 400, y);
+            this.bestSnake.brain.show(x, y, 360, 790, this.bestSnake.vision, this.bestSnake.decision);
         }
         else
         {
             for (let i = 0; i < this.snakes.length; i++)
             {
-                this.snakes[i].show();
+                this.snakes[i].show(x, y);
             }
         }
     }
 
+    /**
+     * Set the best snake of the generation.
+     */
     setBestSnake(): void
-    {  //set the best snake of the generation
+    {
         let max = 0;
         let maxIndex = 0;
+
         for (let i = 0; i < this.snakes.length; i++)
         {
             if (this.snakes[i].fitness > max)
@@ -89,28 +104,22 @@ export class Population
                 maxIndex = i;
             }
         }
+
         if (max > this.bestFitness)
         {
             this.bestFitness = max;
             this.bestSnake = this.snakes[maxIndex].cloneForReplay();
             this.bestSnakeScore = this.snakes[maxIndex].score;
-            //samebest = 0;
-            //mutationRate = defaultMutation;
         }
         else
         {
             this.bestSnake = this.bestSnake.cloneForReplay();
-            /*
-            samebest++;
-            if(samebest > 2) {  //if the best snake has remained the same for more than 3 generations, raise the mutation rate
-               mutationRate *= 2;
-               samebest = 0;
-            }*/
         }
     }
 
+    // Selects a random number in range of the fitnesssum and if a snake falls in that range then select it.
     selectParent(): Snake
-    {  //selects a random number in range of the fitnesssum and if a snake falls in that range then select it
+    {
         let rand = random(this.fitnessSum);
         let summation = 0;
         for (let i = 0; i < this.snakes.length; i++)
@@ -131,39 +140,51 @@ export class Population
         this.setBestSnake();
         this.calculateFitnessSum();
 
-        newSnakes[0] = this.bestSnake.clone();  //add the best snake of the prior generation into the new generation
+        // Add the best snake of the prior generation into the new generation
+        newSnakes[0] = this.bestSnake.clone();
+
         for (let i = 1; i < this.snakes.length; i++)
         {
             let child = this.selectParent().crossover(this.selectParent());
+
             child.mutate();
+
             newSnakes[i] = child;
         }
+
         this.snakes = [];
+
         for (let s of newSnakes)
         {
             this.snakes.push(s.clone());
         }
+
         this.gen += 1;
     }
 
     mutate(): void
     {
+        // Start from 1 as to not override the best snake placed in index 0
         for (let i = 1; i < this.snakes.length; i++)
-        {  //start from 1 as to not override the best snake placed in index 0
+        {
             this.snakes[i].mutate();
         }
     }
 
+    /**
+     * Calculate the fitnesses for each snake.
+     */
     calculateFitness(): void
-    {  //calculate the fitnesses for each snake
+    {
         for (let i = 0; i < this.snakes.length; i++)
         {
             this.snakes[i].calculateFitness();
         }
     }
 
+    // Calculate the sum of all the snakes fitnesses.
     calculateFitnessSum(): void
-    {  //calculate the sum of all the snakes fitnesses
+    {
         this.fitnessSum = 0;
         for (let i = 0; i < this.snakes.length; i++)
         {

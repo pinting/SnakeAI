@@ -7,11 +7,11 @@ import { Matrix } from "./Matrix";
 
 export class NeuralNet
 {
-    private iNodes: number;
-    private hNodes: number;
-    private oNodes: number;
-    private hLayers: number;
-    private weights: Matrix[];
+    iNodes: number;
+    hNodes: number;
+    oNodes: number;
+    hLayers: number;
+    weights: Matrix[];
 
     constructor(input: number, hidden: number, output: number, hiddenLayers: number)
     {
@@ -81,11 +81,11 @@ export class NeuralNet
         return clone;
     }
 
-    load(weight: Matrix[]): void
+    load(weights: Matrix[]): void
     {
         for (let i = 0; i < this.weights.length; i++)
         {
-            this.weights[i] = weight[i];
+            this.weights[i] = weights[i];
         }
     }
 
@@ -119,11 +119,13 @@ export class NeuralNet
             }
         }
 
-        let lc = 0;  //Layer Count
+        let layer = 0;
 
-        //DRAW NODES
+        // DRAW NODES
+
+        // Draw inputs
         for (let i = 0; i < this.iNodes; i++)
-        {  //DRAW INPUTS
+        {
             if (vision[i] != 0)
             {
                 fill(0, 255, 0);
@@ -140,22 +142,25 @@ export class NeuralNet
             text(i, x + (nSize / 2), y + (nSize / 2) + (i * (nSize + space)));
         }
 
-        lc++;
+        layer++;
 
+        // Draw hidden
         for (let a = 0; a < this.hLayers; a++)
         {
             for (let i = 0; i < this.hNodes; i++)
-            {  //DRAW HIDDEN
+            {
                 fill(255);
                 stroke(0);
                 ellipseMode(CORNER);
-                ellipse(x + (lc * nSize) + (lc * nSpace), y + hBuff + (i * (nSize + space)), nSize, nSize);
+                ellipse(x + (layer * nSize) + (layer * nSpace), y + hBuff + (i * (nSize + space)), nSize, nSize);
             }
-            lc++;
+
+            layer++;
         }
 
+        // Draw outputs
         for (let i = 0; i < this.oNodes; i++)
-        {  //DRAW OUTPUTS
+        {
             if (i == maxIndex)
             {
                 fill(0, 255, 0);
@@ -165,14 +170,16 @@ export class NeuralNet
             }
             stroke(0);
             ellipseMode(CORNER);
-            ellipse(x + (lc * nSpace) + (lc * nSize), y + oBuff + (i * (nSize + space)), nSize, nSize);
+            ellipse(x + (layer * nSpace) + (layer * nSize), y + oBuff + (i * (nSize + space)), nSize, nSize);
         }
 
-        lc = 1;
+        layer = 1;
 
-        //DRAW WEIGHTS
+        // DRAW WEIGHTS
+
+        // Input to hidden
         for (let i = 0; i < this.weights[0].rows; i++)
-        {  //INPUT TO HIDDEN
+        { 
             for (let j = 0; j < this.weights[0].cols - 1; j++)
             {
                 if (this.weights[0].matrix[i][j] < 0)
@@ -186,12 +193,13 @@ export class NeuralNet
             }
         }
 
-        lc++;
+        layer++;
 
+        // Hidden to hidden
         for (let a = 1; a < this.hLayers; a++)
         {
             for (let i = 0; i < this.weights[a].rows; i++)
-            {  //HIDDEN TO HIDDEN
+            {
                 for (let j = 0; j < this.weights[a].cols - 1; j++)
                 {
                     if (this.weights[a].matrix[i][j] < 0)
@@ -201,14 +209,15 @@ export class NeuralNet
                     {
                         stroke(0, 0, 255);
                     }
-                    line(x + (lc * nSize) + ((lc - 1) * nSpace), y + hBuff + (nSize / 2) + (j * (space + nSize)), x + (lc * nSize) + (lc * nSpace), y + hBuff + (nSize / 2) + (i * (space + nSize)));
+                    line(x + (layer * nSize) + ((layer - 1) * nSpace), y + hBuff + (nSize / 2) + (j * (space + nSize)), x + (layer * nSize) + (layer * nSpace), y + hBuff + (nSize / 2) + (i * (space + nSize)));
                 }
             }
-            lc++;
+            layer++;
         }
 
+        // Hidden to output
         for (let i = 0; i < this.weights[this.weights.length - 1].rows; i++)
-        {  //HIDDEN TO OUTPUT
+        {
             for (let j = 0; j < this.weights[this.weights.length - 1].cols - 1; j++)
             {
                 if (this.weights[this.weights.length - 1].matrix[i][j] < 0)
@@ -218,16 +227,16 @@ export class NeuralNet
                 {
                     stroke(0, 0, 255);
                 }
-                line(x + (lc * nSize) + ((lc - 1) * nSpace), y + hBuff + (nSize / 2) + (j * (space + nSize)), x + (lc * nSize) + (lc * nSpace), y + oBuff + (nSize / 2) + (i * (space + nSize)));
+                line(x + (layer * nSize) + ((layer - 1) * nSpace), y + hBuff + (nSize / 2) + (j * (space + nSize)), x + (layer * nSize) + (layer * nSpace), y + oBuff + (nSize / 2) + (i * (space + nSize)));
             }
         }
 
         fill(0);
         textSize(15);
         textAlign(CENTER, CENTER);
-        text("U", x + (lc * nSize) + (lc * nSpace) + nSize / 2, y + oBuff + (nSize / 2));
-        text("D", x + (lc * nSize) + (lc * nSpace) + nSize / 2, y + oBuff + space + nSize + (nSize / 2));
-        text("L", x + (lc * nSize) + (lc * nSpace) + nSize / 2, y + oBuff + (2 * space) + (2 * nSize) + (nSize / 2));
-        text("R", x + (lc * nSize) + (lc * nSpace) + nSize / 2, y + oBuff + (3 * space) + (3 * nSize) + (nSize / 2));
+        text("U", x + (layer * nSize) + (layer * nSpace) + nSize / 2, y + oBuff + (nSize / 2));
+        text("D", x + (layer * nSize) + (layer * nSpace) + nSize / 2, y + oBuff + space + nSize + (nSize / 2));
+        text("L", x + (layer * nSize) + (layer * nSpace) + nSize / 2, y + oBuff + (2 * space) + (2 * nSize) + (nSize / 2));
+        text("R", x + (layer * nSize) + (layer * nSpace) + nSize / 2, y + oBuff + (3 * space) + (3 * nSize) + (nSize / 2));
     }
 }

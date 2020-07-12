@@ -1,11 +1,12 @@
 declare var SIZE: number;
+declare var DPC: number;
+declare var HIDDEN_NODES: number;
+declare var HIDDEN_LARYERS: number;
+declare var FPS: number;
 
-declare var hidden_nodes: number;
-declare var hidden_layers: number;
-declare var fps: number;
 declare var highscore: number;
 declare var mutationRate: number;
-declare var defaultmutation: number;
+declare var defaultMutation: number;
 declare var humanPlaying: boolean;
 declare var replayBest: boolean;
 declare var seeVision: boolean;

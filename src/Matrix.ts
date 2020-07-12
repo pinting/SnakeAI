@@ -5,9 +5,9 @@ import * as p5 from "p5"
 
 export class Matrix
 {
-    public rows: number;
-    public cols: number;
-    public matrix: number[][];
+    rows: number;
+    cols: number;
+    matrix: number[][];
 
     constructor(r: number, c: number)
     {
@@ -21,39 +21,41 @@ export class Matrix
         }
     }
 
-    static FromMatrix(m: number[][]): Matrix
+    static FromMatrix(other: number[][]): Matrix
     {
-        let matrix = new Matrix(0, 0);
+        const matrix = new Matrix(0, 0);
 
-        matrix.matrix = m;
-        matrix.rows = m.length;
-        matrix.cols = m[0].length;
+        matrix.matrix = other;
+        matrix.rows = other.length;
+        matrix.cols = other[0].length;
 
         return matrix;
     }
 
-    dot(n: Matrix): Matrix
+    dot(other: Matrix): Matrix
     {
-        let result = new Matrix(this.rows, n.cols);
+        const result = new Matrix(this.rows, other.cols);
 
-        if (this.cols == n.rows)
+        if (this.cols == other.rows)
         {
             for (let i = 0; i < this.rows; i++)
             {
-                for (let j = 0; j < n.cols; j++)
+                for (let j = 0; j < other.cols; j++)
                 {
                     let sum = 0;
                     for (let k = 0; k < this.cols; k++)
                     {
-                        sum += this.matrix[i][k] * n.matrix[k][j];
+                        sum += this.matrix[i][k] * other.matrix[k][j];
                     }
                     result.matrix[i][j] = sum;
                 }
             }
-        } else
-        {
-            console.warn("cols not equals rows")
         }
+        else
+        {
+            console.warn("Matrix: this.cols not equals other.rows in dot function")
+        }
+
         return result;
     }
 
@@ -68,33 +70,35 @@ export class Matrix
         }
     }
 
-    static singleColumnMatrixFromArray(arr: number[]): Matrix
+    static singleColumnMatrixFromArray(array: number[]): Matrix
     {
-        let n = new Matrix(arr.length, 1);
-        for (let i = 0; i < arr.length; i++)
+        const n = new Matrix(array.length, 1);
+
+        for (let i = 0; i < array.length; i++)
         {
-            n.matrix[i][0] = arr[i];
+            n.matrix[i][0] = array[i];
         }
+
         return n;
     }
 
     toArray(): number[]
     {
-        let arr: number[] = []
+        const array: number[] = []
 
         for (let i = 0; i < this.rows; i++)
         {
             for (let j = 0; j < this.cols; j++)
             {
-                arr[j + i * this.cols] = this.matrix[i][j];
+                array[j + i * this.cols] = this.matrix[i][j];
             }
         }
-        return arr;
+        return array;
     }
 
     addBias(): Matrix
     {
-        let n = new Matrix(this.rows + 1, 1);
+        const n = new Matrix(this.rows + 1, 1);
 
         for (let i = 0; i < this.rows; i++)
         {
@@ -108,7 +112,8 @@ export class Matrix
 
     activate()
     {
-        let n = new Matrix(this.rows, this.cols);
+        const n = new Matrix(this.rows, this.cols);
+
         for (let i = 0; i < this.rows; i++)
         {
             for (let j = 0; j < this.cols; j++)
@@ -116,6 +121,7 @@ export class Matrix
                 n.matrix[i][j] = this.relu(this.matrix[i][j]);
             }
         }
+
         return n;
     }
 
@@ -130,7 +136,8 @@ export class Matrix
         {
             for (let j = 0; j < this.cols; j++)
             {
-                let rand = random(0, 1);
+                const rand = random(0, 1);
+
                 if (rand < mutationRate)
                 {
                     this.matrix[i][j] += randomGaussian(0, 1) / 5;
@@ -148,12 +155,12 @@ export class Matrix
         }
     }
 
-    crossover(partner: Matrix): Matrix
+    crossover(other: Matrix): Matrix
     {
-        let child = new Matrix(this.rows, this.cols);
+        const child = new Matrix(this.rows, this.cols);
 
-        let randC = Math.floor(random(this.cols));
-        let randR = Math.floor(random(this.rows));
+        const randC = Math.floor(random(this.cols));
+        const randR = Math.floor(random(this.rows));
 
         for (let i = 0; i < this.rows; i++)
         {
@@ -164,7 +171,7 @@ export class Matrix
                     child.matrix[i][j] = this.matrix[i][j];
                 } else
                 {
-                    child.matrix[i][j] = partner.matrix[i][j];
+                    child.matrix[i][j] = other.matrix[i][j];
                 }
             }
         }
@@ -173,7 +180,8 @@ export class Matrix
 
     clone(): Matrix
     {
-        let clone = new Matrix(this.rows, this.cols);
+        const clone = new Matrix(this.rows, this.cols);
+
         for (let i = 0; i < this.rows; i++)
         {
             for (let j = 0; j < this.cols; j++)
@@ -181,6 +189,7 @@ export class Matrix
                 clone.matrix[i][j] = this.matrix[i][j];
             }
         }
+
         return clone;
     }
 }

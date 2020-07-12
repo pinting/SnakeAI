@@ -5,28 +5,27 @@ import * as p5 from "p5"
 
 export class Button
 {
-    private x: number;
-    private y: number;
-    private w: number;
-    private h: number;
-    private text: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    text: string;
 
-    constructor(x: number, y: number, w: number, h: number, t: string)
+    constructor(x: number, y: number, w: number, h: number, text: string)
     {
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
-        this.text = t;
+        this.text = text;
     }
 
     collide(x: number, y: number)
     {
-        if (x >= this.x - this.w / 2 && x <= this.x + this.w / 2 && y >= this.y - this.h / 2 && y <= this.y + this.h / 2)
-        {
-            return true;
-        }
-        return false;
+        return x >= this.x - this.w / 2 && 
+            x <= this.x + this.w / 2 && 
+            y >= this.y - this.h / 2 && 
+            y <= this.y + this.h / 2;
     }
 
     show()

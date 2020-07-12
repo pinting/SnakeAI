@@ -7,35 +7,35 @@ import { Button } from "./Button";
 import { Snake } from "./Snake";
 import { Population } from "./Population";
 
-window.SIZE = 20;
-window.hidden_nodes = 16;
-window.hidden_layers = 2;
-window.fps = 100;  //15 is ideal for self play, increasing for AI does not directly increase speed, speed is dependant on processing power
+window.DPC = 20;
+window.SIZE = 40;
+window.HIDDEN_NODES = 16;
+window.HIDDEN_LARYERS = 2;
+window.FPS = 100;
 
 window.highscore = 0;
-
 window.mutationRate = 0.05;
-window.defaultmutation = mutationRate;
-
-window.humanPlaying = false;  //false for AI, true to play yourself
-window.replayBest = true;  //shows only the best of each generation
-window.seeVision = false;  //see the snakes vision
+window.defaultMutation = mutationRate;
+window.humanPlaying = false; // False for AI, true to play yourself
+window.replayBest = true; // Shows only the best of each generation
+window.seeVision = false; // See the snakes vision
 window.modelLoaded = false;
 
-let increaseMut: Button;
-let decreaseMut: Button;
+let increaseMutationBtn: Button;
+let decreaseMutationBtn: Button;
 
 let snake: Snake;
 let model: Snake;
-
-let pop: Population;
+let population: Population;
 
 window.setup = function (): void
 {
-    createCanvas(1200, 800);
-    increaseMut = new Button(340, 125, 20, 20, "+");
-    decreaseMut = new Button(365, 125, 20, 20, "-");
-    frameRate(fps);
+    createCanvas(1280, 800);
+
+    increaseMutationBtn = new Button(320, 125, 20, 20, "+");
+    decreaseMutationBtn = new Button(345, 125, 20, 20, "-");
+
+    frameRate(FPS);
 
     if (humanPlaying)
     {
@@ -43,7 +43,7 @@ window.setup = function (): void
     }
     else
     {
-        pop = new Population(2000); //adjust size of population
+        population = new Population(2000); // Adjust size of population
     }
 }
 
@@ -52,14 +52,13 @@ window.draw = function (): void
     background(0);
     noFill();
     stroke(255);
-    line(400, 0, 400, height);
     rectMode(CORNER);
-    rect(400 + SIZE, SIZE, width - 400 - 40, height - 40);
 
     if (humanPlaying)
     {
         snake.move();
         snake.show();
+
         fill(150);
         textSize(20);
         text("SCORE : " + snake.score, 500, 50);
@@ -73,36 +72,39 @@ window.draw = function (): void
     {
         if (!modelLoaded)
         {
-            if (pop.done())
+            if (population.done())
             {
-                highscore = pop.bestSnake.score;
-                pop.calculateFitness();
-                pop.naturalSelection();
+                highscore = population.bestSnake.score;
+                population.calculateFitness();
+                population.naturalSelection();
             } 
             else
             {
-                pop.update();
-                pop.show();
+                population.update();
+                population.show();
             }
 
             fill(150);
             textSize(25);
             textAlign(LEFT);
-            text("BEST FITNESS : " + pop.bestFitness, 120, 25);
-            text("MOVES LEFT : " + pop.bestSnake.lifeLeft, 120, 50);
-            text("GEN : " + pop.gen, 120, 75);
-            text("MUTATION RATE : " + mutationRate * 100 + "%", 120, 100);
-            text("SCORE : " + pop.bestSnake.score, 120, height - 45);
-            text("HIGHSCORE : " + highscore, 120, height - 15);
-            increaseMut.show();
-            decreaseMut.show();
+
+            text("BEST FITNESS: " + population.bestFitness, 105, 25);
+            text("MOVES LEFT: " + population.bestSnake.lifeLeft, 105, 50);
+            text("GEN: " + population.gen, 105, 75);
+            text("MUTATION RATE: " + mutationRate * 100 + "%", 105, 100);
+
+            text("SCORE : " + population.bestSnake.score, 105, height - 45);
+            text("HIGHSCORE : " + highscore, 105, height - 15);
+
+            increaseMutationBtn.show();
+            decreaseMutationBtn.show();
         }
         else
         {
             model.look();
             model.think();
             model.move();
-            model.show();
+            model.show(400, 0);
             model.brain.show(0, 0, 360, 790, model.vision, model.decision);
 
             if (model.dead)
@@ -110,7 +112,6 @@ window.draw = function (): void
                 let newmodel = new Snake();
                 newmodel.brain = model.brain.clone();
                 model = newmodel;
-
             }
 
             textSize(25);
@@ -131,16 +132,16 @@ window.draw = function (): void
 
 window.mousePressed = function (): void
 {
-    if (increaseMut.collide(mouseX, mouseY))
+    if (increaseMutationBtn.collide(mouseX, mouseY))
     {
         mutationRate *= 2;
-        defaultmutation = mutationRate;
+        defaultMutation = mutationRate;
     }
 
-    if (decreaseMut.collide(mouseX, mouseY))
+    if (decreaseMutationBtn.collide(mouseX, mouseY))
     {
         mutationRate /= 2;
-        defaultmutation = mutationRate;
+        defaultMutation = mutationRate;
     }
 }
 

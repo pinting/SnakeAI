@@ -5,29 +5,29 @@ import * as p5 from "p5"
 
 export class Food
 {
-    public pos: p5.Vector;
+    position: p5.Vector;
 
     constructor()
     {
-        let x: number = 400 + SIZE + Math.floor(random(38)) * SIZE;
-        let y: number = SIZE + Math.floor(random(38)) * SIZE;
+        let x: number = Math.floor(random(0, SIZE));
+        let y: number = Math.floor(random(0, SIZE));
 
-        this.pos = createVector(x, y);
+        this.position = createVector(x, y);
     }
 
-    show()
+    show(x: number = 0, y: number = 0)
     {
         stroke(0);
         fill(255, 0, 0);
-        rect(this.pos.x, this.pos.y, SIZE, SIZE);
+        rect(x + this.position.x * DPC, y + this.position.y * DPC, DPC, DPC);
     }
 
     clone()
     {
         let clone = new Food();
 
-        clone.pos.x = this.pos.x;
-        clone.pos.y = this.pos.y;
+        clone.position.x = this.position.x;
+        clone.position.y = this.position.y;
 
         return clone;
     }

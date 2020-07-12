@@ -98,18 +98,18 @@
 /// <reference path="./global.d.ts" />
 Object.defineProperty(exports, "__esModule", { value: true });
 var Button = /** @class */ (function () {
-    function Button(x, y, w, h, t) {
+    function Button(x, y, w, h, text) {
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
-        this.text = t;
+        this.text = text;
     }
     Button.prototype.collide = function (x, y) {
-        if (x >= this.x - this.w / 2 && x <= this.x + this.w / 2 && y >= this.y - this.h / 2 && y <= this.y + this.h / 2) {
-            return true;
-        }
-        return false;
+        return x >= this.x - this.w / 2 &&
+            x <= this.x + this.w / 2 &&
+            y >= this.y - this.h / 2 &&
+            y <= this.y + this.h / 2;
     };
     Button.prototype.show = function () {
         fill(255);
@@ -142,19 +142,21 @@ exports.Button = Button;
 Object.defineProperty(exports, "__esModule", { value: true });
 var Food = /** @class */ (function () {
     function Food() {
-        var x = 400 + SIZE + Math.floor(random(38)) * SIZE;
-        var y = SIZE + Math.floor(random(38)) * SIZE;
-        this.pos = createVector(x, y);
+        var x = Math.floor(random(0, SIZE));
+        var y = Math.floor(random(0, SIZE));
+        this.position = createVector(x, y);
     }
-    Food.prototype.show = function () {
+    Food.prototype.show = function (x, y) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
         stroke(0);
         fill(255, 0, 0);
-        rect(this.pos.x, this.pos.y, SIZE, SIZE);
+        rect(x + this.position.x * DPC, y + this.position.y * DPC, DPC, DPC);
     };
     Food.prototype.clone = function () {
         var clone = new Food();
-        clone.pos.x = this.pos.x;
-        clone.pos.y = this.pos.y;
+        clone.position.x = this.position.x;
+        clone.position.y = this.position.y;
         return clone;
     };
     return Food;
@@ -184,28 +186,28 @@ var Matrix = /** @class */ (function () {
             this.matrix[y] = [];
         }
     }
-    Matrix.FromMatrix = function (m) {
+    Matrix.FromMatrix = function (other) {
         var matrix = new Matrix(0, 0);
-        matrix.matrix = m;
-        matrix.rows = m.length;
-        matrix.cols = m[0].length;
+        matrix.matrix = other;
+        matrix.rows = other.length;
+        matrix.cols = other[0].length;
         return matrix;
     };
-    Matrix.prototype.dot = function (n) {
-        var result = new Matrix(this.rows, n.cols);
-        if (this.cols == n.rows) {
+    Matrix.prototype.dot = function (other) {
+        var result = new Matrix(this.rows, other.cols);
+        if (this.cols == other.rows) {
             for (var i = 0; i < this.rows; i++) {
-                for (var j = 0; j < n.cols; j++) {
+                for (var j = 0; j < other.cols; j++) {
                     var sum = 0;
                     for (var k = 0; k < this.cols; k++) {
-                        sum += this.matrix[i][k] * n.matrix[k][j];
+                        sum += this.matrix[i][k] * other.matrix[k][j];
                     }
                     result.matrix[i][j] = sum;
                 }
             }
         }
         else {
-            console.warn("cols not equals rows");
+            console.warn("Matrix: this.cols not equals other.rows in dot function");
         }
         return result;
     };
@@ -216,21 +218,21 @@ var Matrix = /** @class */ (function () {
             }
         }
     };
-    Matrix.singleColumnMatrixFromArray = function (arr) {
-        var n = new Matrix(arr.length, 1);
-        for (var i = 0; i < arr.length; i++) {
-            n.matrix[i][0] = arr[i];
+    Matrix.singleColumnMatrixFromArray = function (array) {
+        var n = new Matrix(array.length, 1);
+        for (var i = 0; i < array.length; i++) {
+            n.matrix[i][0] = array[i];
         }
         return n;
     };
     Matrix.prototype.toArray = function () {
-        var arr = [];
+        var array = [];
         for (var i = 0; i < this.rows; i++) {
             for (var j = 0; j < this.cols; j++) {
-                arr[j + i * this.cols] = this.matrix[i][j];
+                array[j + i * this.cols] = this.matrix[i][j];
             }
         }
-        return arr;
+        return array;
     };
     Matrix.prototype.addBias = function () {
         var n = new Matrix(this.rows + 1, 1);
@@ -268,7 +270,7 @@ var Matrix = /** @class */ (function () {
             }
         }
     };
-    Matrix.prototype.crossover = function (partner) {
+    Matrix.prototype.crossover = function (other) {
         var child = new Matrix(this.rows, this.cols);
         var randC = Math.floor(random(this.cols));
         var randR = Math.floor(random(this.rows));
@@ -278,7 +280,7 @@ var Matrix = /** @class */ (function () {
                     child.matrix[i][j] = this.matrix[i][j];
                 }
                 else {
-                    child.matrix[i][j] = partner.matrix[i][j];
+                    child.matrix[i][j] = other.matrix[i][j];
                 }
             }
         }
@@ -361,9 +363,9 @@ var NeuralNet = /** @class */ (function () {
         }
         return clone;
     };
-    NeuralNet.prototype.load = function (weight) {
+    NeuralNet.prototype.load = function (weights) {
         for (var i = 0; i < this.weights.length; i++) {
-            this.weights[i] = weight[i];
+            this.weights[i] = weights[i];
         }
     };
     NeuralNet.prototype.pull = function () {
@@ -386,9 +388,10 @@ var NeuralNet = /** @class */ (function () {
                 maxIndex = i;
             }
         }
-        var lc = 0; //Layer Count
-        //DRAW NODES
-        for (var i = 0; i < this.iNodes; i++) { //DRAW INPUTS
+        var layer = 0;
+        // DRAW NODES
+        // Draw inputs
+        for (var i = 0; i < this.iNodes; i++) {
             if (vision[i] != 0) {
                 fill(0, 255, 0);
             }
@@ -403,17 +406,19 @@ var NeuralNet = /** @class */ (function () {
             fill(0);
             text(i, x + (nSize / 2), y + (nSize / 2) + (i * (nSize + space)));
         }
-        lc++;
+        layer++;
+        // Draw hidden
         for (var a = 0; a < this.hLayers; a++) {
-            for (var i = 0; i < this.hNodes; i++) { //DRAW HIDDEN
+            for (var i = 0; i < this.hNodes; i++) {
                 fill(255);
                 stroke(0);
                 ellipseMode(CORNER);
-                ellipse(x + (lc * nSize) + (lc * nSpace), y + hBuff + (i * (nSize + space)), nSize, nSize);
+                ellipse(x + (layer * nSize) + (layer * nSpace), y + hBuff + (i * (nSize + space)), nSize, nSize);
             }
-            lc++;
+            layer++;
         }
-        for (var i = 0; i < this.oNodes; i++) { //DRAW OUTPUTS
+        // Draw outputs
+        for (var i = 0; i < this.oNodes; i++) {
             if (i == maxIndex) {
                 fill(0, 255, 0);
             }
@@ -422,11 +427,12 @@ var NeuralNet = /** @class */ (function () {
             }
             stroke(0);
             ellipseMode(CORNER);
-            ellipse(x + (lc * nSpace) + (lc * nSize), y + oBuff + (i * (nSize + space)), nSize, nSize);
+            ellipse(x + (layer * nSpace) + (layer * nSize), y + oBuff + (i * (nSize + space)), nSize, nSize);
         }
-        lc = 1;
-        //DRAW WEIGHTS
-        for (var i = 0; i < this.weights[0].rows; i++) { //INPUT TO HIDDEN
+        layer = 1;
+        // DRAW WEIGHTS
+        // Input to hidden
+        for (var i = 0; i < this.weights[0].rows; i++) {
             for (var j = 0; j < this.weights[0].cols - 1; j++) {
                 if (this.weights[0].matrix[i][j] < 0) {
                     stroke(255, 0, 0);
@@ -437,9 +443,10 @@ var NeuralNet = /** @class */ (function () {
                 line(x + nSize, y + (nSize / 2) + (j * (space + nSize)), x + nSize + nSpace, y + hBuff + (nSize / 2) + (i * (space + nSize)));
             }
         }
-        lc++;
+        layer++;
+        // Hidden to hidden
         for (var a = 1; a < this.hLayers; a++) {
-            for (var i = 0; i < this.weights[a].rows; i++) { //HIDDEN TO HIDDEN
+            for (var i = 0; i < this.weights[a].rows; i++) {
                 for (var j = 0; j < this.weights[a].cols - 1; j++) {
                     if (this.weights[a].matrix[i][j] < 0) {
                         stroke(255, 0, 0);
@@ -447,12 +454,13 @@ var NeuralNet = /** @class */ (function () {
                     else {
                         stroke(0, 0, 255);
                     }
-                    line(x + (lc * nSize) + ((lc - 1) * nSpace), y + hBuff + (nSize / 2) + (j * (space + nSize)), x + (lc * nSize) + (lc * nSpace), y + hBuff + (nSize / 2) + (i * (space + nSize)));
+                    line(x + (layer * nSize) + ((layer - 1) * nSpace), y + hBuff + (nSize / 2) + (j * (space + nSize)), x + (layer * nSize) + (layer * nSpace), y + hBuff + (nSize / 2) + (i * (space + nSize)));
                 }
             }
-            lc++;
+            layer++;
         }
-        for (var i = 0; i < this.weights[this.weights.length - 1].rows; i++) { //HIDDEN TO OUTPUT
+        // Hidden to output
+        for (var i = 0; i < this.weights[this.weights.length - 1].rows; i++) {
             for (var j = 0; j < this.weights[this.weights.length - 1].cols - 1; j++) {
                 if (this.weights[this.weights.length - 1].matrix[i][j] < 0) {
                     stroke(255, 0, 0);
@@ -460,16 +468,16 @@ var NeuralNet = /** @class */ (function () {
                 else {
                     stroke(0, 0, 255);
                 }
-                line(x + (lc * nSize) + ((lc - 1) * nSpace), y + hBuff + (nSize / 2) + (j * (space + nSize)), x + (lc * nSize) + (lc * nSpace), y + oBuff + (nSize / 2) + (i * (space + nSize)));
+                line(x + (layer * nSize) + ((layer - 1) * nSpace), y + hBuff + (nSize / 2) + (j * (space + nSize)), x + (layer * nSize) + (layer * nSpace), y + oBuff + (nSize / 2) + (i * (space + nSize)));
             }
         }
         fill(0);
         textSize(15);
         textAlign(CENTER, CENTER);
-        text("U", x + (lc * nSize) + (lc * nSpace) + nSize / 2, y + oBuff + (nSize / 2));
-        text("D", x + (lc * nSize) + (lc * nSpace) + nSize / 2, y + oBuff + space + nSize + (nSize / 2));
-        text("L", x + (lc * nSize) + (lc * nSpace) + nSize / 2, y + oBuff + (2 * space) + (2 * nSize) + (nSize / 2));
-        text("R", x + (lc * nSize) + (lc * nSpace) + nSize / 2, y + oBuff + (3 * space) + (3 * nSize) + (nSize / 2));
+        text("U", x + (layer * nSize) + (layer * nSpace) + nSize / 2, y + oBuff + (nSize / 2));
+        text("D", x + (layer * nSize) + (layer * nSpace) + nSize / 2, y + oBuff + space + nSize + (nSize / 2));
+        text("L", x + (layer * nSize) + (layer * nSpace) + nSize / 2, y + oBuff + (2 * space) + (2 * nSize) + (nSize / 2));
+        text("R", x + (layer * nSize) + (layer * nSpace) + nSize / 2, y + oBuff + (3 * space) + (3 * nSize) + (nSize / 2));
     };
     return NeuralNet;
 }());
@@ -504,6 +512,9 @@ var Population = /** @class */ (function () {
         this.bestSnake = this.snakes[0].clone();
         this.bestSnake.replay = true;
     }
+    /**
+     * Check if all the snakes in the population are dead.
+     */
     Population.prototype.done = function () {
         for (var i = 0; i < this.snakes.length; i++) {
             if (!this.snakes[i].dead)
@@ -514,8 +525,12 @@ var Population = /** @class */ (function () {
         }
         return true;
     };
+    /**
+     * Update all the snakes in the generation.
+     */
     Population.prototype.update = function () {
-        if (!this.bestSnake.dead) { //if the best snake is not dead update it, this snake is a replay of the best from the past generation
+        // If the best snake is not dead update it, this snake is a replay of the best from the past generation
+        if (!this.bestSnake.dead) {
             this.bestSnake.look();
             this.bestSnake.think();
             this.bestSnake.move();
@@ -528,17 +543,26 @@ var Population = /** @class */ (function () {
             }
         }
     };
-    Population.prototype.show = function () {
+    /**
+     * Show either the best snake or all the snakes.
+     */
+    Population.prototype.show = function (x, y) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        // Show the brain of the best snake
         if (replayBest) {
-            this.bestSnake.show();
-            this.bestSnake.brain.show(0, 0, 360, 790, this.bestSnake.vision, this.bestSnake.decision); //show the brain of the best snake
+            this.bestSnake.show(x + 400, y);
+            this.bestSnake.brain.show(x, y, 360, 790, this.bestSnake.vision, this.bestSnake.decision);
         }
         else {
             for (var i = 0; i < this.snakes.length; i++) {
-                this.snakes[i].show();
+                this.snakes[i].show(x, y);
             }
         }
     };
+    /**
+     * Set the best snake of the generation.
+     */
     Population.prototype.setBestSnake = function () {
         var max = 0;
         var maxIndex = 0;
@@ -552,19 +576,12 @@ var Population = /** @class */ (function () {
             this.bestFitness = max;
             this.bestSnake = this.snakes[maxIndex].cloneForReplay();
             this.bestSnakeScore = this.snakes[maxIndex].score;
-            //samebest = 0;
-            //mutationRate = defaultMutation;
         }
         else {
             this.bestSnake = this.bestSnake.cloneForReplay();
-            /*
-            samebest++;
-            if(samebest > 2) {  //if the best snake has remained the same for more than 3 generations, raise the mutation rate
-               mutationRate *= 2;
-               samebest = 0;
-            }*/
         }
     };
+    // Selects a random number in range of the fitnesssum and if a snake falls in that range then select it.
     Population.prototype.selectParent = function () {
         var rand = random(this.fitnessSum);
         var summation = 0;
@@ -580,7 +597,8 @@ var Population = /** @class */ (function () {
         var newSnakes = [];
         this.setBestSnake();
         this.calculateFitnessSum();
-        newSnakes[0] = this.bestSnake.clone(); //add the best snake of the prior generation into the new generation
+        // Add the best snake of the prior generation into the new generation
+        newSnakes[0] = this.bestSnake.clone();
         for (var i = 1; i < this.snakes.length; i++) {
             var child = this.selectParent().crossover(this.selectParent());
             child.mutate();
@@ -594,15 +612,20 @@ var Population = /** @class */ (function () {
         this.gen += 1;
     };
     Population.prototype.mutate = function () {
-        for (var i = 1; i < this.snakes.length; i++) { //start from 1 as to not override the best snake placed in index 0
+        // Start from 1 as to not override the best snake placed in index 0
+        for (var i = 1; i < this.snakes.length; i++) {
             this.snakes[i].mutate();
         }
     };
+    /**
+     * Calculate the fitnesses for each snake.
+     */
     Population.prototype.calculateFitness = function () {
         for (var i = 0; i < this.snakes.length; i++) {
             this.snakes[i].calculateFitness();
         }
     };
+    // Calculate the sum of all the snakes fitnesses.
     Population.prototype.calculateFitnessSum = function () {
         this.fitnessSum = 0;
         for (var i = 0; i < this.snakes.length; i++) {
@@ -633,30 +656,34 @@ var Snake = /** @class */ (function () {
     function Snake(layers) {
         if (layers === void 0) { layers = null; }
         this.score = 1;
-        this.lifeLeft = 200; // Amount of moves the snake can make before it dies
-        this.lifetime = 0; // Amount of time the snake has been alive
-        this.foodItterate = 0; //itterator to run through the foodlist (used for replay)
+        this.lifeLeft = 200; // Mount of moves the snake can make before it dies
+        this.lifetime = 0;
+        this.direction = createVector(0, 0); // Amount of time the snake has been alive
+        this.currentFoodIndex = 0; // Index to run through the foodlist (used for replay)
         this.fitness = 0;
         this.dead = false;
-        this.replay = false; //if this snake is a replay of best snake
+        this.replay = false; // If this snake is a replay of best snake
         if (layers == null) {
-            layers = hidden_layers;
+            layers = HIDDEN_LARYERS;
         }
-        this.head = createVector(800, height / 2);
+        this.head = createVector(SIZE / 2, SIZE / 2);
         this.food = new Food_1.Food();
         this.body = [];
         if (!humanPlaying) {
             this.vision = new Array(24);
             this.decision = new Array(4);
-            this.foodList = [];
-            this.foodList.push(this.food.clone());
-            this.brain = new NeuralNet_1.NeuralNet(24, hidden_nodes, 4, layers);
-            this.body.push(createVector(800, (height / 2) + SIZE));
-            this.body.push(createVector(800, (height / 2) + (2 * SIZE)));
+            this.foodList = [this.food.clone()];
+            this.brain = new NeuralNet_1.NeuralNet(24, HIDDEN_NODES, 4, layers);
+            this.body.push(createVector(SIZE / 2, (SIZE / 2) + 1));
+            this.body.push(createVector(SIZE / 2, (SIZE / 2) + 2));
             this.score += 2;
         }
         return this;
     }
+    /**
+     * This factory passes in a list of food positions so that a replay can replay the best snake.
+     * @param foods
+     */
     Snake.FromFoods = function (foods) {
         var snake = new Snake();
         snake.replay = true;
@@ -664,18 +691,23 @@ var Snake = /** @class */ (function () {
         snake.decision = new Array(4);
         snake.body = [];
         snake.foodList = [];
-        for (var _i = 0, foods_1 = foods; _i < foods_1.length; _i++) { //clone all the food positions in the foodlist
+        // Clone all the food positions in the foodlist
+        for (var _i = 0, foods_1 = foods; _i < foods_1.length; _i++) {
             var f = foods_1[_i];
             snake.foodList.push(f.clone());
         }
-        snake.food = snake.foodList[snake.foodItterate];
-        snake.foodItterate++;
-        snake.head = createVector(800, height / 2);
-        snake.body.push(createVector(800, (height / 2) + SIZE));
-        snake.body.push(createVector(800, (height / 2) + (2 * SIZE)));
+        snake.food = snake.foodList[snake.currentFoodIndex++];
+        snake.head = createVector(SIZE / 2, SIZE / 2);
+        snake.body.push(createVector(SIZE / 2, (SIZE / 2) + 1));
+        snake.body.push(createVector(SIZE / 2, (SIZE / 2) + 2));
         snake.score += 2;
         return snake;
     };
+    /**
+     * Check if a position collides with the snakes body.
+     * @param x
+     * @param y
+     */
     Snake.prototype.bodyCollide = function (x, y) {
         for (var i = 0; i < this.body.length; i++) {
             if (x == this.body[i].x && y == this.body[i].y) {
@@ -684,24 +716,32 @@ var Snake = /** @class */ (function () {
         }
         return false;
     };
+    /**
+     * Check if a position collides with the food.
+     * @param x
+     * @param y
+     */
     Snake.prototype.foodCollide = function (x, y) {
-        if (x == this.food.pos.x && y == this.food.pos.y) {
-            return true;
-        }
-        return false;
+        return x == this.food.position.x && y == this.food.position.y;
     };
+    /**
+     * Check if a position collides with the wall.
+     * @param x
+     * @param y
+     */
     Snake.prototype.wallCollide = function (x, y) {
-        if (x >= width - (SIZE) || x < 400 + SIZE || y >= height - (SIZE) || y < SIZE) {
-            return true;
-        }
-        return false;
+        return x >= SIZE || x < 0 || y >= SIZE || y < 0;
     };
-    Snake.prototype.show = function () {
-        this.food.show();
+    Snake.prototype.show = function (x, y) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        fill(100);
+        rect(x, y, SIZE * DPC, SIZE * DPC);
+        this.food.show(x, y);
         fill(255);
         stroke(0);
         for (var i = 0; i < this.body.length; i++) {
-            rect(this.body[i].x, this.body[i].y, SIZE, SIZE);
+            rect(x + this.body[i].x * DPC, y + this.body[i].y * DPC, DPC, DPC);
         }
         if (this.dead) {
             fill(150);
@@ -709,31 +749,38 @@ var Snake = /** @class */ (function () {
         else {
             fill(255);
         }
-        rect(this.head.x, this.head.y, SIZE, SIZE);
+        rect(x + this.head.x * DPC, y + this.head.y * DPC, DPC, DPC);
     };
+    /**
+     * Move the snake.
+     */
     Snake.prototype.move = function () {
-        if (!this.dead) {
-            if (!humanPlaying && !modelLoaded) {
-                this.lifetime++;
-                this.lifeLeft--;
-            }
-            if (this.foodCollide(this.head.x, this.head.y)) {
-                this.eat();
-            }
-            this.shiftBody();
-            if (this.wallCollide(this.head.x, this.head.y)) {
-                this.dead = true;
-            }
-            else if (this.bodyCollide(this.head.x, this.head.y)) {
-                this.dead = true;
-            }
-            else if (this.lifeLeft <= 0 && !humanPlaying) {
-                this.dead = true;
-            }
+        if (this.dead) {
+            return;
+        }
+        if (!humanPlaying && !modelLoaded) {
+            this.lifetime++;
+            this.lifeLeft--;
+        }
+        if (this.foodCollide(this.head.x, this.head.y)) {
+            this.eat();
+        }
+        this.shiftBody();
+        if (this.wallCollide(this.head.x, this.head.y)) {
+            this.dead = true;
+        }
+        else if (this.bodyCollide(this.head.x, this.head.y)) {
+            this.dead = true;
+        }
+        else if (this.lifeLeft <= 0 && !humanPlaying) {
+            this.dead = true;
         }
     };
+    /**
+     * Eat food.
+     */
     Snake.prototype.eat = function () {
-        var len = this.body.length - 1;
+        var last = this.body.length - 1;
         this.score++;
         if (!humanPlaying && !modelLoaded) {
             if (this.lifeLeft < 500) {
@@ -745,60 +792,78 @@ var Snake = /** @class */ (function () {
                 }
             }
         }
-        if (len >= 0) {
-            this.body.push(createVector(this.body[len].x, this.body[len].y));
+        if (last >= 0) {
+            this.body.push(createVector(this.body[last].x, this.body[last].y));
         }
         else {
             this.body.push(createVector(this.head.x, this.head.y));
         }
         if (!this.replay) {
             this.food = new Food_1.Food();
-            while (this.bodyCollide(this.food.pos.x, this.food.pos.y)) {
+            while (this.bodyCollide(this.food.position.x, this.food.position.y)) {
                 this.food = new Food_1.Food();
             }
             if (!humanPlaying) {
                 this.foodList.push(this.food);
             }
         }
-        else { //if the snake is a replay, then we dont want to create new random foods, we want to see the positions the best snake had to collect
-            this.food = this.foodList[this.foodItterate];
-            this.foodItterate++;
+        else {
+            // If the snake is a replay, then we don't want to create new random foods, 
+            // we want to see the positions the best snake had to collect
+            this.food = this.foodList[this.currentFoodIndex++];
         }
     };
+    /**
+     * Shift the body to follow the head.
+     */
     Snake.prototype.shiftBody = function () {
-        var tempx = this.head.x;
-        var tempy = this.head.y;
-        this.head.x += this.xVel;
-        this.head.y += this.yVel;
-        var temp2x;
-        var temp2y;
+        var prevX = this.head.x;
+        var prevY = this.head.y;
+        this.head.x += this.direction.x;
+        this.head.y += this.direction.y;
         for (var i = 0; i < this.body.length; i++) {
-            temp2x = this.body[i].x;
-            temp2y = this.body[i].y;
-            this.body[i].x = tempx;
-            this.body[i].y = tempy;
-            tempx = temp2x;
-            tempy = temp2y;
+            var x = prevX;
+            var y = prevY;
+            prevX = this.body[i].x;
+            prevY = this.body[i].y;
+            this.body[i].x = x;
+            this.body[i].y = y;
         }
     };
+    /**
+     * Clone a version of the snake that will be used for a replay.
+     */
     Snake.prototype.cloneForReplay = function () {
         var clone = Snake.FromFoods(this.foodList);
         clone.brain = this.brain.clone();
         return clone;
     };
+    /**
+     * Clone the snake.
+     */
     Snake.prototype.clone = function () {
-        var clone = new Snake(hidden_layers);
+        var clone = new Snake(HIDDEN_LARYERS);
         clone.brain = this.brain.clone();
         return clone;
     };
+    /**
+     * Crossover the snake with another snake.
+     * @param parent
+     */
     Snake.prototype.crossover = function (parent) {
-        var child = new Snake(hidden_layers);
+        var child = new Snake(HIDDEN_LARYERS);
         child.brain = this.brain.crossover(parent.brain);
         return child;
     };
+    /**
+     * Mutate the snakes brain.
+     */
     Snake.prototype.mutate = function () {
         this.brain.mutate(mutationRate);
     };
+    /**
+     * Calculate the fitness of the snake.
+     */
     Snake.prototype.calculateFitness = function () {
         if (this.score < 10) {
             this.fitness = floor(this.lifetime * this.lifetime) * pow(2, this.score);
@@ -809,86 +874,96 @@ var Snake = /** @class */ (function () {
             this.fitness *= (this.score - 9);
         }
     };
+    /**
+     * Look in all 8 directions and check for food, body and wall.
+     */
     Snake.prototype.look = function () {
         this.vision = [];
-        var temp = this.lookInDirection(createVector(-SIZE, 0));
+        var temp = this.lookInDirection(createVector(-1, 0));
         this.vision[0] = temp[0];
         this.vision[1] = temp[1];
         this.vision[2] = temp[2];
-        temp = this.lookInDirection(createVector(-SIZE, -SIZE));
+        temp = this.lookInDirection(createVector(-1, -1));
         this.vision[3] = temp[0];
         this.vision[4] = temp[1];
         this.vision[5] = temp[2];
-        temp = this.lookInDirection(createVector(0, -SIZE));
+        temp = this.lookInDirection(createVector(0, -1));
         this.vision[6] = temp[0];
         this.vision[7] = temp[1];
         this.vision[8] = temp[2];
-        temp = this.lookInDirection(createVector(SIZE, -SIZE));
+        temp = this.lookInDirection(createVector(1, -1));
         this.vision[9] = temp[0];
         this.vision[10] = temp[1];
         this.vision[11] = temp[2];
-        temp = this.lookInDirection(createVector(SIZE, 0));
+        temp = this.lookInDirection(createVector(1, 0));
         this.vision[12] = temp[0];
         this.vision[13] = temp[1];
         this.vision[14] = temp[2];
-        temp = this.lookInDirection(createVector(SIZE, SIZE));
+        temp = this.lookInDirection(createVector(1, 1));
         this.vision[15] = temp[0];
         this.vision[16] = temp[1];
         this.vision[17] = temp[2];
-        temp = this.lookInDirection(createVector(0, SIZE));
+        temp = this.lookInDirection(createVector(0, 1));
         this.vision[18] = temp[0];
         this.vision[19] = temp[1];
         this.vision[20] = temp[2];
-        temp = this.lookInDirection(createVector(-SIZE, SIZE));
+        temp = this.lookInDirection(createVector(-1, 1));
         this.vision[21] = temp[0];
         this.vision[22] = temp[1];
         this.vision[23] = temp[2];
     };
+    /**
+     * Look in a direction and check for food, body and wall.
+     * @param direction
+     */
     Snake.prototype.lookInDirection = function (direction) {
-        var look = [0, 0, 0];
-        var pos = createVector(this.head.x, this.head.y);
+        var look = new Array(3).fill(0);
+        var position = createVector(this.head.x, this.head.y);
         var distance = 0;
         var foodFound = false;
         var bodyFound = false;
-        pos.add(direction);
+        position.add(direction);
         distance += 1;
-        while (!this.wallCollide(pos.x, pos.y)) {
-            if (!foodFound && this.foodCollide(pos.x, pos.y)) {
+        while (!this.wallCollide(position.x, position.y)) {
+            if (!foodFound && this.foodCollide(position.x, position.y)) {
                 foodFound = true;
                 look[0] = 1;
             }
-            if (!bodyFound && this.bodyCollide(pos.x, pos.y)) {
+            if (!bodyFound && this.bodyCollide(position.x, position.y)) {
                 bodyFound = true;
                 look[1] = 1;
             }
             if (this.replay && seeVision) {
                 stroke(0, 255, 0);
-                point(pos.x, pos.y);
+                point(position.x, position.y);
                 if (foodFound) {
                     noStroke();
                     fill(255, 255, 51);
                     ellipseMode(CENTER);
-                    ellipse(pos.x, pos.y, 5, 5);
+                    ellipse(position.x, position.y, 5, 5);
                 }
                 if (bodyFound) {
                     noStroke();
                     fill(102, 0, 102);
                     ellipseMode(CENTER);
-                    ellipse(pos.x, pos.y, 5, 5);
+                    ellipse(position.x, position.y, 5, 5);
                 }
             }
-            pos.add(direction);
+            position.add(direction);
             distance += 1;
         }
         if (this.replay && seeVision) {
             noStroke();
             fill(0, 255, 0);
             ellipseMode(CENTER);
-            ellipse(pos.x, pos.y, 5, 5);
+            ellipse(position.x, position.y, 5, 5);
         }
         look[2] = 1 / distance;
         return look;
     };
+    /**
+     * Think about what direction to move.
+     */
     Snake.prototype.think = function () {
         this.decision = this.brain.output(this.vision);
         var maxIndex = 0;
@@ -915,27 +990,27 @@ var Snake = /** @class */ (function () {
         }
     };
     Snake.prototype.moveUp = function () {
-        if (this.yVel != SIZE) {
-            this.xVel = 0;
-            this.yVel = -SIZE;
+        if (this.direction.y != 1) {
+            this.direction.x = 0;
+            this.direction.y = -1;
         }
     };
     Snake.prototype.moveDown = function () {
-        if (this.yVel != -SIZE) {
-            this.xVel = 0;
-            this.yVel = SIZE;
+        if (this.direction.y != -1) {
+            this.direction.x = 0;
+            this.direction.y = 1;
         }
     };
     Snake.prototype.moveLeft = function () {
-        if (this.xVel != SIZE) {
-            this.xVel = -SIZE;
-            this.yVel = 0;
+        if (this.direction.x != 1) {
+            this.direction.x = -1;
+            this.direction.y = 0;
         }
     };
     Snake.prototype.moveRight = function () {
-        if (this.xVel != -SIZE) {
-            this.xVel = SIZE;
-            this.yVel = 0;
+        if (this.direction.x != -1) {
+            this.direction.x = 1;
+            this.direction.y = 0;
         }
     };
     return Snake;
@@ -959,41 +1034,40 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var Button_1 = __webpack_require__(/*! ./Button */ "./src/Button.ts");
 var Snake_1 = __webpack_require__(/*! ./Snake */ "./src/Snake.ts");
 var Population_1 = __webpack_require__(/*! ./Population */ "./src/Population.ts");
-window.SIZE = 20;
-window.hidden_nodes = 16;
-window.hidden_layers = 2;
-window.fps = 100; //15 is ideal for self play, increasing for AI does not directly increase speed, speed is dependant on processing power
+window.DPC = 20;
+window.SIZE = 40;
+window.HIDDEN_NODES = 16;
+window.HIDDEN_LARYERS = 2;
+window.FPS = 100;
 window.highscore = 0;
 window.mutationRate = 0.05;
-window.defaultmutation = mutationRate;
-window.humanPlaying = false; //false for AI, true to play yourself
-window.replayBest = true; //shows only the best of each generation
-window.seeVision = false; //see the snakes vision
+window.defaultMutation = mutationRate;
+window.humanPlaying = false; // False for AI, true to play yourself
+window.replayBest = true; // Shows only the best of each generation
+window.seeVision = false; // See the snakes vision
 window.modelLoaded = false;
-var increaseMut;
-var decreaseMut;
+var increaseMutationBtn;
+var decreaseMutationBtn;
 var snake;
 var model;
-var pop;
+var population;
 window.setup = function () {
-    createCanvas(1200, 800);
-    increaseMut = new Button_1.Button(340, 125, 20, 20, "+");
-    decreaseMut = new Button_1.Button(365, 125, 20, 20, "-");
-    frameRate(fps);
+    createCanvas(1280, 800);
+    increaseMutationBtn = new Button_1.Button(320, 125, 20, 20, "+");
+    decreaseMutationBtn = new Button_1.Button(345, 125, 20, 20, "-");
+    frameRate(FPS);
     if (humanPlaying) {
         snake = new Snake_1.Snake();
     }
     else {
-        pop = new Population_1.Population(2000); //adjust size of population
+        population = new Population_1.Population(2000); // Adjust size of population
     }
 };
 window.draw = function () {
     background(0);
     noFill();
     stroke(255);
-    line(400, 0, 400, height);
     rectMode(CORNER);
-    rect(400 + SIZE, SIZE, width - 400 - 40, height - 40);
     if (humanPlaying) {
         snake.move();
         snake.show();
@@ -1006,32 +1080,32 @@ window.draw = function () {
     }
     else {
         if (!modelLoaded) {
-            if (pop.done()) {
-                highscore = pop.bestSnake.score;
-                pop.calculateFitness();
-                pop.naturalSelection();
+            if (population.done()) {
+                highscore = population.bestSnake.score;
+                population.calculateFitness();
+                population.naturalSelection();
             }
             else {
-                pop.update();
-                pop.show();
+                population.update();
+                population.show();
             }
             fill(150);
             textSize(25);
             textAlign(LEFT);
-            text("BEST FITNESS : " + pop.bestFitness, 120, 25);
-            text("MOVES LEFT : " + pop.bestSnake.lifeLeft, 120, 50);
-            text("GEN : " + pop.gen, 120, 75);
-            text("MUTATION RATE : " + mutationRate * 100 + "%", 120, 100);
-            text("SCORE : " + pop.bestSnake.score, 120, height - 45);
-            text("HIGHSCORE : " + highscore, 120, height - 15);
-            increaseMut.show();
-            decreaseMut.show();
+            text("BEST FITNESS: " + population.bestFitness, 105, 25);
+            text("MOVES LEFT: " + population.bestSnake.lifeLeft, 105, 50);
+            text("GEN: " + population.gen, 105, 75);
+            text("MUTATION RATE: " + mutationRate * 100 + "%", 105, 100);
+            text("SCORE : " + population.bestSnake.score, 105, height - 45);
+            text("HIGHSCORE : " + highscore, 105, height - 15);
+            increaseMutationBtn.show();
+            decreaseMutationBtn.show();
         }
         else {
             model.look();
             model.think();
             model.move();
-            model.show();
+            model.show(400, 0);
             model.brain.show(0, 0, 360, 790, model.vision, model.decision);
             if (model.dead) {
                 var newmodel = new Snake_1.Snake();
@@ -1052,13 +1126,13 @@ window.draw = function () {
     }
 };
 window.mousePressed = function () {
-    if (increaseMut.collide(mouseX, mouseY)) {
+    if (increaseMutationBtn.collide(mouseX, mouseY)) {
         mutationRate *= 2;
-        defaultmutation = mutationRate;
+        defaultMutation = mutationRate;
     }
-    if (decreaseMut.collide(mouseX, mouseY)) {
+    if (decreaseMutationBtn.collide(mouseX, mouseY)) {
         mutationRate /= 2;
-        defaultmutation = mutationRate;
+        defaultMutation = mutationRate;
     }
 };
 window.keyPressed = function () {
